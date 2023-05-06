@@ -7,10 +7,10 @@ export enum TriggerMode {
 }
 
 export const TRIGGER_MODE_TEXT = {
-  [TriggerMode.Always]: { title: 'Always', desc: 'SciGPT is queried on every search' },
+  [TriggerMode.Always]: { title: 'Always', desc: 'MailGPT is queried on every search' },
   [TriggerMode.Manually]: {
     title: 'Manually',
-    desc: 'SciGPT is queried when you manually click a button',
+    desc: 'MailGPT is queried when you manually click a button',
   },
 }
 
@@ -33,13 +33,8 @@ export enum Language {
 }
 
 export const Prompt =
-  'Please summarize the paper by author(s) in one concise sentence.\
- Then, list key insights and lessons learned from the paper.\
- Next, generate 3-5 questions that you would like to ask the authors about their work.\
- Finally, provide 3-5 suggestions for related topics or future research directions \
- based on the content of the paper.\
- If applicable, list at least 5 relevant references from the field of study of the paper.\
- Here is the paper. If the last sentence provided is incomplete just ignore it for summarizing :\
+  'Please summarize the mail thread 1-2 concise sentence.\
+If the last sentence provided is incomplete just ignore it for summarizing :\
  '
 
 export interface SitePrompt {

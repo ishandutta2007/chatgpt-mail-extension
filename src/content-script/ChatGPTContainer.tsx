@@ -23,6 +23,7 @@ function ChatGPTContainer(props: Props) {
       <div className="chat-gpt-card">
         <ChatGPTCard
           question={props.question}
+          replyButtonContainer={props.replyButtonContainer}
           promptSource={props.promptSource}
           triggerMode={props.triggerMode}
           onStatusChange={setQueryStatus}

@@ -5,6 +5,7 @@ import ChatGPTQuery, { QueryStatus } from './ChatGPTQuery'
 
 interface Props {
   question: string
+  replyButtonContainer: any
   promptSource: string
   triggerMode: TriggerMode
   onStatusChange?: (status: QueryStatus) => void
@@ -21,7 +22,7 @@ function ChatGPTCard(props: Props) {
   }
   return (
     <p className="icon-and-text cursor-pointer" onClick={() => setTriggered(true)}>
-      <SearchIcon size="small" /> Ask SciGPT to summarize
+      <SearchIcon size="small" /> Ask MailGPT to summarize
     </p>
   )
 }

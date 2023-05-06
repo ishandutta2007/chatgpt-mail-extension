@@ -1,6 +1,6 @@
 {
   "appName": {
-    "message": "SciGPT"
+    "message": "MailGPT"
   },
   "appDesc": {
     "message": "Summarize a scientific paper on websites like arXiv, nature, ieeexplore, pubmed etc and provide key insights using ChatGPT."

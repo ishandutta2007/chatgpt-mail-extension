@@ -8,11 +8,13 @@ import { captureEvent } from '../analytics'
 import { Answer } from '../messaging'
 import ChatGPTFeedback from './ChatGPTFeedback'
 import { isBraveBrowser, shouldShowRatingTip } from './utils.js'
+import { render } from 'preact'
 
 export type QueryStatus = 'success' | 'error' | undefined
 
 interface Props {
   question: string
+  replyButtonContainer: any
   promptSource: string
   onStatusChange?: (status: QueryStatus) => void
 }
@@ -27,6 +29,22 @@ interface ReQuestionAnswerProps {
   latestAnswerText: string | undefined
 }
 
+
+async function mount_summary(summary: string, sidebarContainerQuery: string) {
+  console.log("summary",summary);
+  // const siderbarContainer = getPossibleElementByQuerySelector(sidebarContainerQuery)
+  const siderbarContainer = document.querySelector('div[aria-label^="Re:"]')
+  siderbarContainer.scrollIntoView();
+  const container = document.createElement('div')
+  container.className = 'chat-gpt-container'
+  container.classList.add('gpt-light')
+  siderbarContainer.prepend(container)
+  render(
+    <div>{summary}</div>,    
+    container,
+  )
+}
+
 function ChatGPTQuery(props: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [answer, setAnswer] = useState<Answer | null>(null)
@@ -37,8 +55,7 @@ function ChatGPTQuery(props: Props) {
   const [status, setStatus] = useState<QueryStatus>()
   const [reError, setReError] = useState('')
   const [reQuestionDone, setReQuestionDone] = useState(false)
-  const [requestionList, setRequestionList] = useState<Requestion[]>([])
-  const [questionIndex, setQuestionIndex] = useState(0)
+  const [questionIndex, setQuestionIndex] = useState(-1)
   const [reQuestionLatestAnswerText, setReQuestionLatestAnswerText] = useState<string | undefined>()
 
   useEffect(() => {
@@ -93,23 +110,20 @@ function ChatGPTQuery(props: Props) {
 
   const openOptionsPage = useCallback(() => {
     Browser.runtime.sendMessage({ type: 'OPEN_OPTIONS_PAGE' })
-  }, [])
+  }, [questionIndex])
 
   // requestion
   useEffect(() => {
-    if (!requestionList[questionIndex]) return
     const port = Browser.runtime.connect()
     const listener = (msg: any) => {
       try {
         if (msg.text) {
-          const requestionListValue = requestionList
-          requestionListValue[questionIndex].answer = msg
-          setRequestionList(requestionListValue)
-          const latestAnswerText = requestionList[questionIndex]?.answer?.text
+          const latestAnswerText = msg?.text
           setReQuestionLatestAnswerText(latestAnswerText)
+          console.log("reQuestionLatestAnswerText",reQuestionLatestAnswerText)
         } else if (msg.event === 'DONE') {
           setReQuestionDone(true)
-          setQuestionIndex(questionIndex + 1)
+          setQuestionIndex(0)
         }
       } catch {
         setReError(msg.error)
@@ -117,38 +131,41 @@ function ChatGPTQuery(props: Props) {
     }
     port.onMessage.addListener(listener)
     port.postMessage({
-      question: requestionList[questionIndex].requestion,
+      question: "Capital of India?",
       conversationId: answer?.conversationId,
-      parentMessageId:
-        questionIndex == 0
-          ? answer?.messageId
-          : requestionList[questionIndex - 1].answer?.messageId,
+      parentMessageId: answer?.messageId,
     })
     return () => {
       port.onMessage.removeListener(listener)
       port.disconnect()
     }
-  }, [requestionList, questionIndex, answer?.conversationId, answer?.messageId])
+  }, [questionIndex])
 
   // * Requery Handler Function
   const requeryHandler = useCallback(() => {
-    if (inputRef.current) {
-      setReQuestionDone(false)
-      const requestion = inputRef.current.value
-      setRequestionList([...requestionList, { requestion, index: questionIndex, answer: null }])
-      inputRef.current.value = ''
+    console.log("requeryHandler", inputRef);
+    setReQuestionDone(false);
+    const requestion = "Capital of India";
+    console.log("requeryHandler");
+    const replyButtonContainer = props.replyButtonContainer;
+    replyButtonContainer.scrollIntoView();
+    replyButtonContainer.click();
+    function setTextWithDelay() {
+      setTimeout(function() {
+        const element = document.querySelectorAll('div[aria-label="Message Body"]')[0];
+        console.log(element);
+        element.textContent = 'New Hello, replies!';
+        setQuestionIndex(questionIndex + 1);
+        console.log(reQuestionLatestAnswerText);
+        mount_summary(answer.text, 'div[aria-label^="Re:"]')
+      }, 2000);
     }
-  }, [requestionList, questionIndex])
-
-  const ReQuestionAnswerFixed = ({ text }: { text: string | undefined }) => {
-    if (!text) return <p className="text-[#b6b8ba] animate-pulse">Answering...</p>
-    return (
-      <ReactMarkdown rehypePlugins={[[rehypeHighlight, { detect: true }]]}>{text}</ReactMarkdown>
-    )
-  }
+    setTextWithDelay();
+  }, [ questionIndex])
 
   const ReQuestionAnswer = ({ latestAnswerText }: ReQuestionAnswerProps) => {
-    if (!latestAnswerText || requestionList[requestionList.length - 1]?.answer?.text == undefined) {
+    console.log("ReQuestionAnswer latestAnswerText:", latestAnswerText)
+    if (!latestAnswerText) {
       return <p className="text-[#b6b8ba] animate-pulse">Answering...</p>
     }
     return (
@@ -162,7 +179,7 @@ function ChatGPTQuery(props: Props) {
     return (
       <div className="markdown-body gpt-markdown" id="gpt-answer" dir="auto">
         <div className="gpt-header">
-          <span className="font-bold">SciGPT</span>
+          <span className="font-bold">MailGPT</span>
           <span className="cursor-pointer leading-[0]" onClick={openOptionsPage}>
             <GearIcon size={14} />
           </span>
@@ -177,23 +194,18 @@ function ChatGPTQuery(props: Props) {
           {answer.text}
         </ReactMarkdown>
         <div className="question-container">
-          {requestionList.map((requestion) => (
-            <div key={requestion.index}>
-              <div className="font-bold">{`Q${requestion.index + 1} : ${
-                requestion.requestion
-              }`}</div>
+          {
+            <div key={1}>
               {reError ? (
                 <p>
                   Failed to load response from ChatGPT:
                   <span className="break-all block">{reError}</span>
                 </p>
-              ) : requestion.index < requestionList.length - 1 ? (
-                <ReQuestionAnswerFixed text={requestion.answer?.text} />
               ) : (
                 <ReQuestionAnswer latestAnswerText={reQuestionLatestAnswerText} />
               )}
             </div>
-          ))}
+          }
         </div>
 
         {done && (
@@ -205,18 +217,11 @@ function ChatGPTQuery(props: Props) {
               e.preventDefault()
             }}
           >
-            <input
-              disabled={!reQuestionDone}
-              type="text"
-              ref={inputRef}
-              placeholder="Tell Me More"
-              id="question"
-            />
             <button
               id="submit"
               onClick={requeryHandler}
             >
-              ASK
+              Compose with ChatGPT
             </button>
           </form>
         )}

@@ -6,6 +6,33 @@ import ChatGPTContainer from './ChatGPTContainer'
 import { config, SearchEngine } from './search-engine-configs'
 import './styles.scss'
 import { getPossibleElementByQuerySelector } from './utils'
+let replyButtonContainer;
+
+
+async function expandGmailThread() {
+  console.log("expandGmailThread");
+  var collapseButtons = document.querySelectorAll('span[aria-expanded="false"]');
+  for (var i = 0; i < collapseButtons.length; i++) {
+    collapseButtons[i].click();
+  }
+  collapseButtons = document.querySelectorAll('div[role="listitem"]');
+  for (var i = 0; i < collapseButtons.length; i++) {
+    if (collapseButtons[i].getAttribute("aria-expanded")=='true') {
+      console.debug(i + "th = aria-expanded=true")
+      continue;
+    } else {
+      console.debug(i + "th = no aria-expanded or aria-expanded=false");
+    }
+    collapseButtons[i].scrollIntoView();
+    collapseButtons[i].querySelector('span').click();
+  }
+  collapseButtons = document.querySelectorAll('div[aria-label="Show trimmed content"]');
+  for (var i = 0; i < collapseButtons.length; i++) {
+    collapseButtons[i].scrollIntoView();
+    collapseButtons[i].click();
+  }
+}
+
 
 async function mount(question: string, promptSource: string, siteConfig: SearchEngine) {
   const container = document.createElement('div')
@@ -25,6 +52,8 @@ async function mount(question: string, promptSource: string, siteConfig: SearchE
   }
 
   const siderbarContainer = getPossibleElementByQuerySelector(siteConfig.sidebarContainerQuery)
+  siderbarContainer.scrollIntoView();
+
   if (siderbarContainer) {
     siderbarContainer.prepend(container)
   } else {
@@ -38,6 +67,7 @@ async function mount(question: string, promptSource: string, siteConfig: SearchE
   render(
     <ChatGPTContainer
       question={question}
+      replyButtonContainer={replyButtonContainer}
       promptSource={promptSource}
       triggerMode={userConfig.triggerMode || 'always'}
     />,
@@ -83,6 +113,7 @@ try {
 const siteConfig = config[siteName]
 
 async function run() {
+  // expandGmailThread();
   const searchInput = getPossibleElementByQuerySelector<HTMLInputElement>(siteConfig.inputQuery)
   console.debug('Try to Mount ChatGPT on', siteName)
 
@@ -121,3 +152,12 @@ run()
 if (siteConfig.watchRouteChange) {
   siteConfig.watchRouteChange(run)
 }
+
+window.addEventListener('load', () => {
+  expandGmailThread();
+  run();
+  replyButtonContainer = getPossibleElementByQuerySelector(siteConfig.replyButtonContainerQuery);
+  replyButtonContainer.scrollIntoView();
+  // replyButtonContainer.click();
+});
+
