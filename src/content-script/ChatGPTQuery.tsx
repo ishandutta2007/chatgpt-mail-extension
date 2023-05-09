@@ -26,13 +26,13 @@ interface Requestion {
 }
 
 interface ReQuestionAnswerProps {
-  latestAnswerText: string | undefined
+  replyText: string | undefined
 }
 
 
-async function mount_summary(summary: string, sidebarContainerQuery: string) {
-  console.log("summary",summary);
-  // const siderbarContainer = getPossibleElementByQuerySelector(sidebarContainerQuery)
+async function mount_summary(summary: string, summaryContainerQuery: string) {
+  console.log("summary", summary);
+  // const siderbarContainer = getPossibleElementByQuerySelector(summaryContainerQuery)
   const siderbarContainer = document.querySelector('div[aria-label^="Re:"]')
   siderbarContainer.scrollIntoView();
   const container = document.createElement('div')
@@ -56,7 +56,7 @@ function ChatGPTQuery(props: Props) {
   const [reError, setReError] = useState('')
   const [reQuestionDone, setReQuestionDone] = useState(false)
   const [questionIndex, setQuestionIndex] = useState(-1)
-  const [reQuestionLatestAnswerText, setReQuestionLatestAnswerText] = useState<string | undefined>()
+  const [reQuestionReplyText, setReQuestionReplyText] = useState<string | undefined>()
 
   useEffect(() => {
     props.onStatusChange?.(status)
@@ -68,12 +68,14 @@ function ChatGPTQuery(props: Props) {
       if (msg.text) {
         setAnswer(msg)
         setStatus('success')
+        console.log("answer just set", answer);
       } else if (msg.error) {
         setError(msg.error)
         setStatus('error')
       } else if (msg.event === 'DONE') {
         setDone(true)
         setReQuestionDone(true)
+        console.log("answer done set", answer);
       }
     }
     port.onMessage.addListener(listener)
@@ -118,9 +120,11 @@ function ChatGPTQuery(props: Props) {
     const listener = (msg: any) => {
       try {
         if (msg.text) {
-          const latestAnswerText = msg?.text
-          setReQuestionLatestAnswerText(latestAnswerText)
-          console.log("reQuestionLatestAnswerText",reQuestionLatestAnswerText)
+          const replyText = msg?.text
+          setReQuestionReplyText(replyText)
+          console.log("questionIndex",questionIndex)
+          console.log("reQuestionReplyText",reQuestionReplyText)
+          console.log("answer later", answer);
         } else if (msg.event === 'DONE') {
           setReQuestionDone(true)
           setQuestionIndex(0)
@@ -156,21 +160,21 @@ function ChatGPTQuery(props: Props) {
         console.log(element);
         element.textContent = 'New Hello, replies!';
         setQuestionIndex(questionIndex + 1);
-        console.log(reQuestionLatestAnswerText);
+        console.log("answer b4 mount", answer);
         mount_summary(answer.text, 'div[aria-label^="Re:"]')
       }, 2000);
     }
     setTextWithDelay();
   }, [ questionIndex])
 
-  const ReQuestionAnswer = ({ latestAnswerText }: ReQuestionAnswerProps) => {
-    console.log("ReQuestionAnswer latestAnswerText:", latestAnswerText)
-    if (!latestAnswerText) {
+  const ReQuestionAnswer = ({ replyText }: ReQuestionAnswerProps) => {
+    console.log("ReQuestionAnswer replyText:", replyText)
+    if (!replyText) {
       return <p className="text-[#b6b8ba] animate-pulse">Answering...</p>
     }
     return (
       <ReactMarkdown rehypePlugins={[[rehypeHighlight, { detect: true }]]}>
-        {latestAnswerText}
+        {replyText}
       </ReactMarkdown>
     )
   }
@@ -187,26 +191,12 @@ function ChatGPTQuery(props: Props) {
           <ChatGPTFeedback
             messageId={answer.messageId}
             conversationId={answer.conversationId}
-            latestAnswerText={answer.text}
+            replyText={answer.text}
           />
         </div>
         <ReactMarkdown rehypePlugins={[[rehypeHighlight, { detect: true }]]}>
           {answer.text}
         </ReactMarkdown>
-        <div className="question-container">
-          {
-            <div key={1}>
-              {reError ? (
-                <p>
-                  Failed to load response from ChatGPT:
-                  <span className="break-all block">{reError}</span>
-                </p>
-              ) : (
-                <ReQuestionAnswer latestAnswerText={reQuestionLatestAnswerText} />
-              )}
-            </div>
-          }
-        </div>
 
         {done && (
           <form
