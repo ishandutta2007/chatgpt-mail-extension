@@ -51,7 +51,7 @@ async function mount(question: string, promptSource: string, siteConfig: SearchE
     container.classList.add('gpt-light')
   }
 
-  const siderbarContainer = getPossibleElementByQuerySelector(siteConfig.sidebarContainerQuery)
+  const siderbarContainer = getPossibleElementByQuerySelector(siteConfig.summaryContainerQuery)
   siderbarContainer.scrollIntoView();
 
   if (siderbarContainer) {
